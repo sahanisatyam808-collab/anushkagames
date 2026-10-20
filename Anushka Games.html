@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anushka Games</title>
+<style>
+:root{--bg:#fdf2f8;--card:#fff;--tx:#3b0a2a;--ac:#db2777;--ac2:#fbcfe8;--mut:#9d6b86;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a0b14;--card:#2a1421;--tx:#fce7f3;--ac:#f472b6;--ac2:#4a1d36;--mut:#c79ab3}}
+:root[data-theme="dark"]{--bg:#1a0b14;--card:#2a1421;--tx:#fce7f3;--ac:#f472b6;--ac2:#4a1d36;--mut:#c79ab3}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;text-align:center}
+header{padding:22px 12px 8px}
+h1{margin:0;font-size:2rem;color:var(--ac)}
+header p{margin:4px 0 0;color:var(--mut)}
+#grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px;max-width:520px;margin:auto}
+.card{background:var(--card);border:2px solid var(--ac2);border-radius:18px;padding:18px 8px;font-size:1rem;color:var(--tx);cursor:pointer}
+.card span{display:block;font-size:2.2rem;margin-bottom:6px}
+.card:active{transform:scale(.96)}
+#stage{display:none;max-width:420px;margin:auto;padding:12px}
+#bar{display:none;align-items:center;gap:10px;padding:10px 14px;max-width:420px;margin:auto}
+#bar h2{margin:0;font-size:1.2rem;color:var(--ac)}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:12px;padding:10px 16px;margin:4px}
+.back{background:var(--ac2);color:var(--tx);border:0;border-radius:12px;padding:8px 14px}
+input{font:inherit;padding:10px;border-radius:12px;border:2px solid var(--ac2);background:var(--card);color:var(--tx);width:120px;text-align:center}
+.msg{min-height:1.6em;margin:10px 0;font-weight:600}
+canvas{background:var(--card);border:2px solid var(--ac2);border-radius:14px;max-width:100%;touch-action:none}
+.pad{display:flex;justify-content:center;gap:6px;margin-top:8px}
+.pad button{width:64px;height:54px;font-size:1.3rem;border:0;border-radius:12px;background:var(--ac2);color:var(--tx)}
+.calc{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc button{padding:16px 0;font-size:1.3rem;border:0;border-radius:14px;background:var(--card);color:var(--tx);border:2px solid var(--ac2)}
+.calc .op{background:var(--ac);color:#fff}
+#disp{background:var(--card);border:2px solid var(--ac2);border-radius:14px;padding:14px;font-size:1.8rem;text-align:right;min-height:64px;margin-bottom:10px;overflow-x:auto}
+.b3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:300px;margin:auto}
+.b3 button{aspect-ratio:1;font-size:2.4rem;border-radius:14px;border:2px solid var(--ac2);background:var(--card);color:var(--tx)}
+.b4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.b4 button{aspect-ratio:1;font-size:2rem;border-radius:14px;border:2px solid var(--ac2);background:var(--card);color:var(--tx);padding:0}
+.b4 button.open{background:var(--ac2)}
+.big{font-size:3rem;margin:10px}
+.moles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:auto}
+.moles button{aspect-ratio:1;font-size:2.4rem;border-radius:50%;border:3px solid var(--ac2);background:var(--card)}
+footer{padding:20px;color:var(--mut);font-size:.85rem}
+</style>
+</head>
+<body>
+<header><h1>🎮 Anushka Games</h1><p>7 mast games, sab free!</p></header>
+<div id="grid"></div>
+<div id="bar"><button class="back" onclick="home()">⬅ Back</button><h2 id="ttl"></h2></div>
+<div id="stage"></div>
+<footer>Made with ❤️ by Satyam</footer>
+<script>
+const $=s=>document.querySelector(s), rnd=n=>Math.floor(Math.random()*n);
+const G={}, LIST=[["guess","🔢","Number Guess"],["snake","🐍","Snake"],["calc","🧮","Calculator"],["ttt","❌","Tic Tac Toe"],["mem","🧠","Memory Match"],["rps","✊","Pani Kagaz Pathar"],["mole","🔨","Whack a Mole"]];
+let cleanup=null;
+$("#grid").innerHTML=LIST.map(g=>`<button class="card" onclick="openGame('${g[0]}')"><span>${g[1]}</span>${g[2]}</button>`).join("");
+function home(){if(cleanup){cleanup();cleanup=null}$("#grid").style.display="grid";$("#stage").style.display="none";$("#bar").style.display="none";$("header").style.display="block"}
+function openGame(k){const g=LIST.find(x=>x[0]==k);$("#grid").style.display="none";$("header").style.display="none";$("#bar").style.display="flex";$("#stage").style.display="block";$("#ttl").textContent=g[1]+" "+g[2];const st=$("#stage");st.innerHTML="";cleanup=G[k](st)||null}
+
+/* 1. Number Guess */
+G.guess=el=>{
+ let n,tries;
+ el.innerHTML='<p>Maine 1 se 100 ke beech number socha hai. Guess karo!</p><input id="gi" type="number" inputmode="numeric"><br><button class="btn" id="gb">Guess</button><div class="msg" id="gm"></div><button class="btn" id="gr">Naya game</button>';
+ const start=()=>{n=1+rnd(100);tries=0;$("#gm").textContent="";$("#gi").value=""};
+ $("#gb").onclick=()=>{const v=+$("#gi").value;if(!v)return;tries++;
+  $("#gm").textContent=v==n?`🎉 Sahi! ${tries} try mein mil gaya`:v<n?"⬆ Aur bada socho":"⬇ Aur chhota socho"};
+ $("#gr").onclick=start;start();
+};
+
+/* 2. Snake */
+G.snake=el=>{
+ el.innerHTML='<p>Score: <b id="sc">0</b></p><canvas id="cv" width="300" height="300"></canvas><div class="pad"><button data-d="L">◀</button><button data-d="U">▲</button><button data-d="D">▼</button><button data-d="R">▶</button></div><div class="msg" id="sm"></div><button class="btn" id="sr">Restart</button>';
+ const cv=$("#cv"),c=cv.getContext("2d"),N=15,S=20;let s,d,f,score,t,nd;
+ const dirs={L:[-1,0],R:[1,0],U:[0,-1],D:[0,1]};
+ const turn=k=>{const v=dirs[k];if(v[0]+d[0]||v[1]+d[1])nd=v};
+ const start=()=>{clearInterval(t);s=[[7,7]];d=[1,0];nd=d;f=[rnd(N),rnd(N)];score=0;$("#sc").textContent=0;$("#sm").textContent="";t=setInterval(step,130)};
+ const step=()=>{d=nd;const h=[s[0][0]+d[0],s[0][1]+d[1]];
+  if(h[0]<0||h[1]<0||h[0]>=N||h[1]>=N||s.some(p=>p[0]==h[0]&&p[1]==h[1])){clearInterval(t);$("#sm").textContent="💥 Game over!";return}
+  s.unshift(h);if(h[0]==f[0]&&h[1]==f[1]){score++;$("#sc").textContent=score;f=[rnd(N),rnd(N)]}else s.pop();
+  c.fillStyle="#fdf2f8";c.fillRect(0,0,300,300);c.fillStyle="#ef4444";c.fillRect(f[0]*S,f[1]*S,S-2,S-2);
+  c.fillStyle="#db2777";s.forEach(p=>c.fillRect(p[0]*S,p[1]*S,S-2,S-2))};
+ el.querySelectorAll(".pad button").forEach(b=>b.onclick=()=>turn(b.dataset.d));
+ let x0,y0;cv.ontouchstart=e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY};
+ cv.ontouchend=e=>{const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;
+  if(Math.abs(dx)>Math.abs(dy))turn(dx>0?"R":"L");else turn(dy>0?"D":"U")};
+ $("#sr").onclick=start;start();
+ return()=>clearInterval(t);
+};
+
+/* 3. Calculator */
+G.calc=el=>{
+ const keys=["C","(",")","/","7","8","9","*","4","5","6","-","1","2","3","+","0",".","⌫","="];
+ el.innerHTML='<div id="disp">0</div><div class="calc">'+keys.map(k=>`<button class="${"/*-+=".includes(k)?"op":""}">${k}</button>`).join("")+'</div>';
+ let e="";const show=()=>$("#disp").textContent=e||"0";
+ el.querySelectorAll(".calc button").forEach(b=>b.onclick=()=>{const k=b.textContent;
+  if(k=="C")e="";else if(k=="⌫")e=e.slice(0,-1);
+  else if(k=="="){try{if(/^[0-9+\-*/.() ]+$/.test(e))e=String(+(Function('"use strict";return ('+e+')')()).toFixed(8))}catch(x){e="Error"}}
+  else{if(e=="Error")e="";e+=k}show()});
+};
+
+/* 4. Tic Tac Toe */
+G.ttt=el=>{
+ el.innerHTML='<p>Tum ❌ ho, computer ⭕ hai</p><div class="b3" id="tb"></div><div class="msg" id="tm"></div><button class="btn" id="tr">Naya game</button>';
+ const L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];let b,over;
+ const win=p=>L.some(l=>l.every(i=>b[i]==p));
+ const find=p=>{for(const l of L){const v=l.map(i=>b[i]);if(v.filter(x=>x==p).length==2&&v.includes(""))return l[v.indexOf("")]}return -1};
+ const draw=()=>{$("#tb").innerHTML=b.map((v,i)=>`<button data-i="${i}">${v}</button>`).join("");
+  $("#tb").querySelectorAll("button").forEach(x=>x.onclick=()=>play(+x.dataset.i))};
+ const end=()=>{if(win("❌")){$("#tm").textContent="🎉 Tum jeet gaye!";return over=1}
+  if(win("⭕")){$("#tm").textContent="😜 Computer jeet gaya!";return over=1}
+  if(!b.includes("")){$("#tm").textContent="🤝 Draw!";return over=1}};
+ const play=i=>{if(over||b[i])return;b[i]="❌";if(!end()){let m=find("⭕");if(m<0)m=find("❌");
+   if(m<0)m=b[4]==""?4:-1;if(m<0){const e=b.map((v,j)=>v==""?j:-1).filter(j=>j>=0);m=e[rnd(e.length)]}
+   b[m]="⭕";end()}draw()};
+ const start=()=>{b=Array(9).fill("");over=0;$("#tm").textContent="";draw()};
+ $("#tr").onclick=start;start();
+};
+
+/* 5. Memory Match */
+G.mem=el=>{
+ el.innerHTML='<p>Moves: <b id="mv">0</b></p><div class="b4" id="mb"></div><div class="msg" id="mm"></div><button class="btn" id="mr">Naya game</button>';
+ let cards,open,lock,moves,done;
+ const start=()=>{const e=["🍎","🐶","🚀","🎈","🍕","⚽","🌸","🎵"];cards=[...e,...e].sort(()=>Math.random()-.5);open=[];lock=0;moves=0;done=0;$("#mv").textContent=0;$("#mm").textContent="";
+  $("#mb").innerHTML=cards.map((_,i)=>`<button data-i="${i}">❓</button>`).join("");
+  $("#mb").querySelectorAll("button").forEach(b=>b.onclick=()=>flip(b))};
+ const flip=b=>{const i=+b.dataset.i;if(lock||open.includes(i)||b.classList.contains("open"))return;
+  b.textContent=cards[i];b.classList.add("open");open.push(i);
+  if(open.length==2){moves++;$("#mv").textContent=moves;const[a,c]=open,bs=$("#mb").children;
+   if(cards[a]==cards[c]){open=[];if(++done==8)$("#mm").textContent=`🎉 Jeet gaye ${moves} moves mein!`}
+   else{lock=1;setTimeout(()=>{[a,c].forEach(j=>{bs[j].textContent="❓";bs[j].classList.remove("open")});open=[];lock=0},700)}}};
+ $("#mr").onclick=start;start();
+};
+
+/* 6. Rock Paper Scissors */
+G.rps=el=>{
+ el.innerHTML='<p>Tum: <b id="ps">0</b> | Computer: <b id="cs">0</b></p><div><button class="btn big" data-m="0">✊</button><button class="btn big" data-m="1">✋</button><button class="btn big" data-m="2">✌️</button></div><div class="big" id="rv"></div><div class="msg" id="rm">Chuno!</div>';
+ const E=["✊","✋","✌️"];let p=0,c=0;
+ el.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{const u=+b.dataset.m,k=rnd(3);
+  $("#rv").textContent=E[u]+" vs "+E[k];
+  if(u==k)$("#rm").textContent="🤝 Barabar!";
+  else if((u-k+3)%3==1){p++;$("#rm").textContent="🎉 Tum jeete!"}
+  else{c++;$("#rm").textContent="😜 Computer jeeta!"}
+  $("#ps").textContent=p;$("#cs").textContent=c});
+};
+
+/* 7. Whack a Mole */
+G.mole=el=>{
+ el.innerHTML='<p>Score: <b id="ms">0</b> | Time: <b id="mt">30</b></p><div class="moles" id="mg"></div><div class="msg" id="mx"></div><button class="btn" id="mr">Start</button>';
+ const g=$("#mg");g.innerHTML=Array.from({length:9},(_,i)=>`<button data-i="${i}">🕳️</button>`).join("");
+ let sc,tm,t1,t2,cur=-1;
+ const hs=g.children;
+ const clear=()=>{clearInterval(t1);clearInterval(t2);if(cur>=0)hs[cur].textContent="🕳️";cur=-1};
+ g.querySelectorAll("button").forEach(b=>b.onclick=()=>{if(+b.dataset.i==cur){sc++;$("#ms").textContent=sc;b.textContent="💥";cur=-1}});
+ $("#mr").onclick=()=>{clear();sc=0;tm=30;$("#ms").textContent=0;$("#mt").textContent=30;$("#mx").textContent="";
+  t1=setInterval(()=>{if(cur>=0)hs[cur].textContent="🕳️";cur=rnd(9);hs[cur].textContent="🐹"},700);
+  t2=setInterval(()=>{$("#mt").textContent=--tm;if(tm<=0){clear();$("#mx").textContent=`⏰ Time up! Score: ${sc}`}},1000)};
+ return clear;
+};
+</script>
+</body>
+</html>
